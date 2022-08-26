@@ -1,0 +1,65 @@
+.github-link{
+    position: fixed;
+    top: 0;
+    left: 0;
+    text-decoration: none;
+    padding: 0.35rem;
+    color: lightgray;
+    font-weight: 300;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 0.25rem;
+    z-index: 1;
+}
+
+.github-link:hover{
+    color: gray;
+    text-decoration: underline;
+}
+
+body{
+    background-color: #121212;
+    color: var(--bs-light);
+}
+
+p{
+    margin-bottom: 0;
+}
+
+.bg-surface1{
+    background-color: var(--bs-gray-800);
+    border-radius: 0.25rem;
+}
+
+.btn-spotify{
+    --bs-btn-color: black;
+    --bs-btn-font-weight: 500;
+    --bs-btn-bg: #1db954;
+    --bs-btn-hover-color: black;
+    --bs-btn-hover-bg: #2bde6a;
+    --bs-btn-hover-border-color: transparent;
+    --bs-btn-disabled-color: black;
+    --bs-btn-disabled-bg: #1db954;
+    --bs-btn-disabled-border-color: transparent;
+}
+
+.nav{
+    --bs-nav-link-color: #2bde6a;
+    --bs-nav-link-hover-color: #1db954;
+    --bs-nav-link-padding-y: 0.75rem;
+}
+
+.nav-pills{
+    --bs-nav-pills-link-active-bg: #1db954;
+}
+
+.tab-content>.active.ad-flex{
+    display: flex;
+}
+
+.multiselect-native-select{
+    width: 100%;
+}
+
+.font-weight-bold{
+    font-weight: bold;
+}
