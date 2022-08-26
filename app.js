@@ -59,8 +59,6 @@ function auth(){
         // code_challenge: code_challenge
     };
 
-    console.log("auth")
-    
     window.location.href = "https://accounts.spotify.com/authorize?" + new URLSearchParams(data).toString();
 }
 
@@ -143,11 +141,11 @@ Vue.createApp({
         if (accessTokenData){
             if (accessTokenData["expires_in"] >  (Date.now() / 1000)){
                 this.setAccessToken(accessTokenData["access_token"]);
-                console.log("valid token from localstorage");
+                // console.log("valid token from localstorage");
             }
             else if ("refresh_token" in accessTokenData){
                 getAccessTokenRefreshed(accessTokenData.refresh_token, this.setAccessToken);
-                console.log("refresh token from localstorage");
+                // console.log("refresh token from localstorage");
             }
         }
 
