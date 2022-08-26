@@ -1,5 +1,6 @@
 const CLIENT_ID = "d347cce711f34e3bbfe5f52689e46c09";
 const CLIENT_SECRET = "5a459975172742f992d247bd1050e84e";
+// const HOME_URL = "http://127.0.0.1:5500/index.html";
 const HOME_URL = "https://itzterra.github.io/SpotifyTools/";
 
 function arrayEquals(a, b) {
@@ -10,6 +11,25 @@ Array.prototype.intersect = function(arr2) { return this.filter(x => arr2.includ
 Array.prototype.intersectTracks = function(arr2) { return this.filter(x => arr2.some(y => {return y.name == x.name && arrayEquals(y.artists, x.artists)})); }
 Array.prototype.diff = function(arr2) { return this.filter(x => !arr2.includes(x)); }
 Array.prototype.diffTracks = function(arr2) { return this.filter(x => !arr2.some(y => {return y.name == x.name && arrayEquals(y.artists, x.artists)})); }
+
+const multiselectData = {
+    buttonClass: 'form-select form-select-lg text-start',
+    buttonContainer: '<div class="btn-group d-grid"></div>',
+    templates: {
+        button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+    },
+    nonSelectedText: 'Select Playlists',
+    includeSelectAllOption: true,
+    selectAllText: 'Select All',
+    selectAllNumber: true,
+    enableFiltering: true,
+    buttonTextAlignment: 'left',
+    maxHeight: 600,
+    numberDisplayed: 0,
+    onChange: this.diffSelected2Change,
+    onSelectAll: this.diffSelected2Change,
+    onDeselectAll: this.diffSelected2Change
+};
 
 function getAccessToken(authCode, onSuccess, codeVerifier = null){
     $.ajax({
@@ -165,51 +185,14 @@ Vue.createApp({
     },
     mounted(){
         this.$nextTick(() => {
-            $("#multiselect").multiselect({
-                buttonClass: 'form-select form-select-lg text-start',
-                buttonContainer: '<div class="btn-group d-grid"></div>',
-                templates: {
-                    button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
-                },
-                nonSelectedText: 'Select Playlists',
-                includeSelectAllOption: true,
-                selectAllText: 'Select All',
-                selectAllNumber: true,
-                enableFiltering: true,
-                buttonTextAlignment: 'left',
-                maxHeight: 600,
-                numberDisplayed: 0,
-                onChange: this.diffSelected2Change,
-                onSelectAll: this.diffSelected2Change,
-                onDeselectAll: this.diffSelected2Change
-            });
+            $("#multiselect").multiselect(multiselectData);
         });
     },
     methods: {
         setAccessToken(accessToken){
             this.ACCESS_TOKEN = accessToken;
             API.setAccessToken(accessToken);
-            this.$nextTick(() => {
-                $("#multiselect").multiselect({
-                    buttonClass: 'form-select form-select-lg text-start',
-                    buttonContainer: '<div class="btn-group d-grid"></div>',
-                    templates: {
-                        button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
-                    },
-                    nonSelectedText: 'Select Playlists',
-                    includeSelectAllOption: true,
-                    selectAllText: 'Select All',
-                    selectAllNumber: true,
-                    enableFiltering: true,
-                    buttonTextAlignment: 'left',
-                    maxHeight: 600,
-                    numberDisplayed: 0,
-                    onChange: this.diffSelected2Change,
-                    onSelectAll: this.diffSelected2Change,
-                    onDeselectAll: this.diffSelected2Change
-                });
-            })
-
+            
             this.getPlaylists();
         },
         authenticate(){
@@ -218,11 +201,15 @@ Vue.createApp({
         getPlaylists(){
             if (sessionStorage.playlists){
                 this.playlists = JSON.parse(sessionStorage.playlists);
+                this.$nextTick(() => {
+                    $("#multiselect").multiselect(multiselectData);
+                });
             }
             else{
                 API.getUserPlaylists(options={limit: 50}, (err, res) => {
                     this.playlists = res.items.map((i) => {return {id: i.id, name: i.name, total: i.tracks.total}});
                     sessionStorage.playlists = JSON.stringify(this.playlists);
+                    $("#multiselect").multiselect(multiselectData);
                 });
             }
         },
@@ -355,6 +342,9 @@ Vue.createApp({
                 }
                 $("#diffResult").html(resultHTML);
             }
+        },
+        rebuildMultiselect(){
+            $("#multiselect").multiselect('rebuild');
         }
     }
 }).mount("#app")

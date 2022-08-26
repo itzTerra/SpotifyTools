@@ -55,6 +55,7 @@
           </div>
         </div>
         <div v-else class="d-flex align-items-start">
+          <button @click="rebuildMultiselect" class="btn btn-info">rebuild</button>
           <div class="nav flex-column nav-pills bg-surface1 fs-4 me-3" role="tablist" aria-orientation="vertical">
             <button class="nav-link active" id="duplicatesTab" data-bs-toggle="pill" data-bs-target="#duplicatesTabPanel" type="button" role="tab" aria-controls="duplicatesTabPanel" aria-selected="true">Duplicates</button>
             <button class="nav-link" id="commonTab" data-bs-toggle="pill" data-bs-target="#commonTabPanel" type="button" role="tab" aria-controls="commonTabPanel" aria-selected="false">Common</button>
