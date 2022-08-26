@@ -1,6 +1,6 @@
 const CLIENT_ID = "d347cce711f34e3bbfe5f52689e46c09";
 const CLIENT_SECRET = "5a459975172742f992d247bd1050e84e";
-const HOME_URL = "http://127.0.0.1:5500/index.html";
+const HOME_URL = "https://itzterra.github.io/SpotifyTools/";
 
 function arrayEquals(a, b) {
     return (Array.isArray(a) && Array.isArray(b)) && (a.length === b.length) && a.every((val, index) => val === b[index]);
