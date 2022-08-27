@@ -1,7 +1,7 @@
 const CLIENT_ID = "d347cce711f34e3bbfe5f52689e46c09";
 const CLIENT_SECRET = "5a459975172742f992d247bd1050e84e";
-const HOME_URL = "http://127.0.0.1:5500/index.html";
-// const HOME_URL = "https://itzterra.github.io/SpotifyTools/";
+// const HOME_URL = "http://127.0.0.1:5500/index.html";
+const HOME_URL = "https://itzterra.github.io/SpotifyTools/";
 
 function arrayEquals(a, b) {
     return (Array.isArray(a) && Array.isArray(b)) && (a.length === b.length) && a.every((val, index) => val === b[index]);
@@ -161,11 +161,9 @@ Vue.createApp({
         if (accessTokenData){
             if (accessTokenData["expires_in"] >  (Date.now() / 1000)){
                 this.setAccessToken(accessTokenData["access_token"]);
-                // console.log("valid token from localstorage");
             }
             else if ("refresh_token" in accessTokenData){
                 getAccessTokenRefreshed(accessTokenData.refresh_token, this.setAccessToken);
-                // console.log("refresh token from localstorage");
             }
         }
 
@@ -185,7 +183,6 @@ Vue.createApp({
     },
     mounted(){
         this.$nextTick(() => {
-            console.log("MOUNT", this.playlists, $("#multiselect"));
             if (this.playlists){
                 $("#multiselect").multiselect(multiselectData);
             }
@@ -211,22 +208,13 @@ Vue.createApp({
             let playlists = JSON.parse(sessionStorage.playlists || null);
             if (playlists && playlists.length){
                 this.playlists = playlists;
-                console.log("session", $("#multiselect"));
-                // this.$nextTick(() => {
-                //     $("#multiselect").multiselect(multiselectData);
-                //     $("#multiselect").multiselect('rebuild');
-                // });
             }
             else{
                 API.getUserPlaylists(options={limit: 50}, (err, res) => {
                     this.playlists = res.items.map((i) => {return {id: i.id, name: i.name, total: i.tracks.total}});
                     sessionStorage.playlists = JSON.stringify(this.playlists);
-                    console.log("api", $("#multiselect"));
-                    this.$nextTick(() => {
-                        console.log("api", $("#multiselect"));
-                        $("#multiselect").multiselect(multiselectData);
-                        $("#multiselect").multiselect('rebuild');
-                    });
+                    $("#multiselect").multiselect(multiselectData);
+                    $("#multiselect").multiselect('rebuild');
                 });
             }
         },
@@ -360,8 +348,5 @@ Vue.createApp({
                 $("#diffResult").html(resultHTML);
             }
         },
-        rebuildMultiselect(){
-            $("#multiselect").multiselect('rebuild');
-        }
     }
 }).mount("#app")
