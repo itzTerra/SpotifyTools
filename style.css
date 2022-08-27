@@ -30,6 +30,15 @@ p{
     border-radius: 0.25rem;
 }
 
+.disconnect-btn{
+    position: absolute;
+    right: 0;
+    top: 0;
+    margin-top: auto;
+    margin-bottom: auto;
+    display: block;
+}
+
 .btn-spotify{
     --bs-btn-color: black;
     --bs-btn-font-weight: 500;
