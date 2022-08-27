@@ -215,8 +215,10 @@ Vue.createApp({
                 API.getUserPlaylists(options={limit: 50}, (err, res) => {
                     this.playlists = res.items.map((i) => {return {id: i.id, name: i.name, total: i.tracks.total}});
                     sessionStorage.playlists = JSON.stringify(this.playlists);
-                    $("#multiselect").multiselect(multiselectData);
-                    $("#multiselect").multiselect('rebuild');
+                    this.$nextTick(() => {
+                        $("#multiselect").multiselect(multiselectData);
+                        $("#multiselect").multiselect('rebuild');
+                    })
                     console.log("api", $("#multiselect"));
 
                 });
