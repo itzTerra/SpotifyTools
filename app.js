@@ -183,6 +183,7 @@ Vue.createApp({
     },
     mounted(){
         this.$nextTick(() => {
+            console.log("mount", this.playlists.length, $("#multiselect"));
             if (this.playlists){
                 $("#multiselect").multiselect(multiselectData);
             }
@@ -207,6 +208,7 @@ Vue.createApp({
         getPlaylists(){
             let playlists = JSON.parse(sessionStorage.playlists || null);
             if (playlists && playlists.length){
+                console.log("session", $("#multiselect"));
                 this.playlists = playlists;
             }
             else{
@@ -215,6 +217,8 @@ Vue.createApp({
                     sessionStorage.playlists = JSON.stringify(this.playlists);
                     $("#multiselect").multiselect(multiselectData);
                     $("#multiselect").multiselect('rebuild');
+                    console.log("api", $("#multiselect"));
+
                 });
             }
         },

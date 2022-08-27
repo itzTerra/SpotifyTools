@@ -43,6 +43,10 @@ p{
     --bs-btn-color: black;
     --bs-btn-font-weight: 500;
     --bs-btn-bg: #1db954;
+    --bs-btn-border-color: #1db954;
+    --bs-btn-active-color: black;
+    --bs-btn-active-bg: #1aa74b;
+    --bs-btn-active-border-color: transparent;
     --bs-btn-hover-color: black;
     --bs-btn-hover-bg: #2bde6a;
     --bs-btn-hover-border-color: transparent;
