@@ -26,10 +26,18 @@ const multiselectData = {
     buttonTextAlignment: 'left',
     maxHeight: 600,
     numberDisplayed: 0,
-    onChange: this.diffSelected2Change,
-    onSelectAll: this.diffSelected2Change,
-    onDeselectAll: this.diffSelected2Change
 };
+
+function getMultiselectData(eventCallbackFn, nonSelectedText = ""){
+    let data = multiselectData;
+    data.onChange = eventCallbackFn
+    data.onSelectAll = eventCallbackFn
+    data.onDeselectAll = eventCallbackFn
+    if (nonSelectedText){
+        data.nonSelectedText = nonSelectedText
+    }
+    return data
+}
 
 function getAccessToken(authCode, onSuccess, codeVerifier = null){
     $.ajax({
@@ -148,8 +156,9 @@ Vue.createApp({
         const commonSelected2 = Vue.ref("");
         const diffSelected1 = Vue.ref("");
         const diffSelected2 = Vue.ref([]);
+        const backupSelected = Vue.ref([]);
 
-        return {ACCESS_TOKEN, playlists, playlistTracks, duplicatesSelected, commonSelected1, commonSelected2, diffSelected1, diffSelected2};
+        return {ACCESS_TOKEN, playlists, playlistTracks, duplicatesSelected, commonSelected1, commonSelected2, diffSelected1, diffSelected2, backupSelected};
     },
     computed: {
         console: () => console,
@@ -184,7 +193,8 @@ Vue.createApp({
     mounted(){
         this.$nextTick(() => {
             if (this.playlists){
-                $("#multiselect").multiselect(multiselectData);
+                $("#diffMultiselect").multiselect(getMultiselectData(this.diffSelected2Change));
+                $("#backupMultiselect").multiselect(getMultiselectData(this.backupChange, "Select Playlists to Backup"));
             }
         });
     },
@@ -214,87 +224,92 @@ Vue.createApp({
                     this.playlists = res.items.map((i) => {return {id: i.id, name: i.name, total: i.tracks.total}});
                     sessionStorage.playlists = JSON.stringify(this.playlists);
                     this.$nextTick(() => {
-                        $("#multiselect").multiselect(multiselectData);
-                        $("#multiselect").multiselect('rebuild');
+                        $("#diffMultiselect").multiselect(getMultiselectData(this.diffSelected2Change));
+                        $("#diffMultiselect").multiselect('rebuild');
+                        $("#backupMultiselect").multiselect(getMultiselectData(this.backupChange, "Select Playlists to Backup"));
+                        $("#backupMultiselect").multiselect('rebuild');
                     })
                 });
             }
         },
-        getTracks(playlistID, callbackFn){
+        async getTracks(playlistID){
             if (playlistID in this.playlistTracks){
                 return this.playlistTracks[playlistID];
             }
             else{
-                this.playlistTracks[playlistID] = [];
-                let total = this.playlists.find(p => p.id === playlistID).total;
-                let n = Math.ceil(this.playlists.find(p => p.id === playlistID).total / 100)
-                for (let i = 0; i < n; i++){
-                    API.getPlaylistTracks(playlistID, {fields: "items(track(name, artists(name)))", offset: i*100}, (err, res) => {
-                        this.playlistTracks[playlistID] = this.playlistTracks[playlistID].concat(res.items.map(i => {
-                            return {
-                                name: i.track.name, 
-                                artists: i.track.artists.map(a => a.name)
+                return await new Promise(resolve => {
+                    this.playlistTracks[playlistID] = [];
+                    let total = this.playlists.find(p => p.id === playlistID).total;
+                    let n = Math.ceil(total / 100)
+                    for (let i = 0; i < n; i++){
+                        API.getPlaylistTracks(playlistID, {fields: "items(track(name, artists(name)))", offset: i*100}, (err, res) => {
+                            this.playlistTracks[playlistID] = this.playlistTracks[playlistID].concat(res.items.map(i => {
+                                return {
+                                    name: i.track.name, 
+                                    artists: i.track.artists.map(a => a.name)
+                                }
+                            }));
+
+                            if (this.playlistTracks[playlistID].length == total) {
+                                resolve(this.playlistTracks[playlistID])
                             }
-                        }));
-                        if (this.playlistTracks[playlistID].length == total) callbackFn();
-                    })
-                }
+                        })
+                    }
+                });
             }
         },
-        findDuplicates(){
-            let tracks = this.getTracks(this.duplicatesSelected, this.findDuplicates);
-            if (tracks){
-                let seen = {};
-                let dupes = [];
-                for (var [index, track] of tracks.entries()){
-                    let name = track.name.toLowerCase();
+        async findDuplicates(){
+            let tracks = await this.getTracks(this.duplicatesSelected);
 
-                    if (name in seen){
-                        if (tracks[seen[name]].artists.intersect(track.artists).length > 0){
-                            dupes.push(track);
-                        }
+            let seen = {};
+            let dupes = [];
+            for (var [index, track] of tracks.entries()){
+                let name = track.name.toLowerCase();
+
+                if (name in seen){
+                    if (tracks[seen[name]].artists.intersect(track.artists).length > 0){
+                        dupes.push(track);
                     }
-                    else{
-                        seen[name] = index;
-                    }
-                }
-
-                let playlistName = this.playlists.find(p => p.id === this.duplicatesSelected).name;
-
-                let resultHTML;
-                if (dupes.length){
-                    resultHTML = `
-                    <h5 class="my-3">${dupes.length} Duplicate${dupes.length > 1 ? "s" : ""} found in <span class="fw-lighter">"${playlistName}"</span>:</h5>
-                    ${getTracksTableHTML(dupes)}
-                    `;
                 }
                 else{
-                    resultHTML = `<h5 class="mt-4 text-center">No Duplicates found in <span class="fw-lighter">"${playlistName}"</span></h5>`;
+                    seen[name] = index;
                 }
-                $("#duplicatesResult").html(resultHTML);
             }
+
+            let playlistName = this.playlists.find(p => p.id === this.duplicatesSelected).name;
+
+            let resultHTML;
+            if (dupes.length){
+                resultHTML = `
+                <h5 class="my-3">${dupes.length} Duplicate${dupes.length > 1 ? "s" : ""} found in <span class="fw-lighter">"${playlistName}"</span>:</h5>
+                ${getTracksTableHTML(dupes)}
+                `;
+            }
+            else{
+                resultHTML = `<h5 class="mt-4 text-center">No Duplicates found in <span class="fw-lighter">"${playlistName}"</span></h5>`;
+            }
+            $("#duplicatesResult").html(resultHTML);
         },
-        findCommon(){
-            let tracks1 = this.getTracks(this.commonSelected1, this.findCommon);
-            let tracks2 = this.getTracks(this.commonSelected2, this.findCommon);
-            if (tracks1 && tracks2){
-                let commonTracks = tracks1.intersectTracks(tracks2);
+        async findCommon(){
+            let tracks1 = await this.getTracks(this.commonSelected1);
+            let tracks2 = await this.getTracks(this.commonSelected2);
 
-                let playlist1Name = this.playlists.find(p => p.id === this.commonSelected1).name;
-                let playlist2Name = this.playlists.find(p => p.id === this.commonSelected2).name;
+            let commonTracks = tracks1.intersectTracks(tracks2);
 
-                let resultHTML;
-                if (commonTracks.length){
-                    resultHTML = `
-                    <h5 class="my-3">${commonTracks.length} Common Song${commonTracks.length > 1 ? "s" : ""} found for <span class="fw-lighter">"${playlist1Name}"</span> and <span class="fw-lighter">"${playlist2Name}"</span>:</h5>
-                    ${getTracksTableHTML(commonTracks)}
-                    `;
-                }
-                else{
-                    resultHTML = `<h5 class="mt-2 text-center">No Common Songs found for <span class="fw-lighter">"${playlist1Name}"</span> and <span class="fw-lighter">"${playlist2Name}"</span></h5>`;
-                }
-                $("#commonResult").html(resultHTML);
+            let playlist1Name = this.playlists.find(p => p.id === this.commonSelected1).name;
+            let playlist2Name = this.playlists.find(p => p.id === this.commonSelected2).name;
+
+            let resultHTML;
+            if (commonTracks.length){
+                resultHTML = `
+                <h5 class="my-3">${commonTracks.length} Common Song${commonTracks.length > 1 ? "s" : ""} found for <span class="fw-lighter">"${playlist1Name}"</span> and <span class="fw-lighter">"${playlist2Name}"</span>:</h5>
+                ${getTracksTableHTML(commonTracks)}
+                `;
             }
+            else{
+                resultHTML = `<h5 class="mt-2 text-center">No Common Songs found for <span class="fw-lighter">"${playlist1Name}"</span> and <span class="fw-lighter">"${playlist2Name}"</span></h5>`;
+            }
+            $("#commonResult").html(resultHTML);
         },
         diffSelected2Change(options){
             if (Array.isArray(options)){
@@ -318,37 +333,78 @@ Vue.createApp({
                 }
             }
         },
-        findDiff(){
-            let tracks1 = this.getTracks(this.diffSelected1, this.findDiff);
+        async findDiff(){
+            let tracks1 = await this.getTracks(this.diffSelected1);
             let tracks2 = [];
-            for (let p of this.diffSelected2){
-                let t = this.getTracks(p, this.findDiff);
-                if (t){
-                    tracks2.push(...t);
-                }
-                else{
-                    return
-                }
+            for (let playlistID of this.diffSelected2){
+                let tracks = await this.getTracks(playlistID);
+                tracks2.push(...tracks);
             }
 
-            if (tracks1 && tracks2){
-                let diffTracks = tracks1.diffTracks(tracks2);
+            let diffTracks = tracks1.diffTracks(tracks2);
 
-                let playlist1Name = this.playlists.find(p => p.id === this.diffSelected1).name;
-                let playlist2Names = this.diffSelected2.map(id => this.playlists.find(p => p.id === id).name);
+            let playlist1Name = this.playlists.find(p => p.id === this.diffSelected1).name;
+            let playlist2Names = this.diffSelected2.map(id => this.playlists.find(p => p.id === id).name);
 
-                let resultHTML;
-                if (diffTracks.length){
-                    resultHTML = `
-                    <h5 class="my-3">${diffTracks.length} Unique Song${diffTracks.length > 1 ? "s" : ""} found in <span class="fw-lighter">"${playlist1Name}"</span>, which are not in <span class="fw-lighter">"${playlist2Names.join(", ")}"</span>:</h5>
-                    ${getTracksTableHTML(diffTracks)}
-                    `;
+            let resultHTML;
+            if (diffTracks.length){
+                resultHTML = `
+                <h5 class="my-3">${diffTracks.length} Unique Song${diffTracks.length > 1 ? "s" : ""} found in <span class="fw-lighter">"${playlist1Name}"</span>, which are not in <span class="fw-lighter">"${playlist2Names.join(", ")}"</span>:</h5>
+                ${getTracksTableHTML(diffTracks)}
+                `;
+            }
+            else{
+                resultHTML = `<h5 class="mt-2 text-center">All Songs in <span class="fw-lighter">"${playlist1Name}"</span> are also in <span class="fw-lighter">"${playlist2Names.join(", ")}"</span></h5>`;
+            }
+            $("#diffResult").html(resultHTML);
+        },
+        backupChange(options){
+            if (Array.isArray(options)){
+                for (const option of options){
+                    let index = this.backupSelected.indexOf(option.val());
+                    if (index !== -1){
+                        this.backupSelected.splice(index, 1);
+                    }
+                    else{
+                        this.backupSelected.push(option.val());
+                    }
+                }
+            }
+            else{
+                let index = this.backupSelected.indexOf(options.val());
+                if (index !== -1){
+                    this.backupSelected.splice(index, 1);
                 }
                 else{
-                    resultHTML = `<h5 class="mt-2 text-center">All Songs in <span class="fw-lighter">"${playlist1Name}"</span> are also in <span class="fw-lighter">"${playlist2Names.join(", ")}"</span></h5>`;
+                    this.backupSelected.push(options.val());
                 }
-                $("#diffResult").html(resultHTML);
             }
+        },
+        async getBackup(){
+            backup = []
+
+            for (let playlistID of this.backupSelected){
+                let playlist = this.playlists.find(p => p.id === playlistID)
+                let tracks = await this.getTracks(playlistID)
+
+                tracks = tracks.map((track) => {
+                    return `${track.artists.join(", ")} - ${track.name}`
+                }, tracks)
+
+                backup.push({
+                    playlist_name: playlist.name,
+                    track_count: playlist.total,
+                    tracks: tracks
+                })
+            }
+
+            let dataStr = JSON.stringify(backup, null, 2);
+            let dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+            let linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', "SpotifyBackup.json");
+            linkElement.click();
         },
     }
 }).mount("#app")
