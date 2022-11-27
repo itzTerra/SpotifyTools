@@ -3,6 +3,20 @@ const CLIENT_SECRET = "5a459975172742f992d247bd1050e84e";
 // const HOME_URL = "http://127.0.0.1:5500/index.html";
 const HOME_URL = "https://itzterra.github.io/SpotifyTools/";
 
+function goTop(){
+    document.body.scrollIntoView()
+}
+
+const SCROLL_AMOUNT = 500
+const scrollTopButton = document.getElementById("scrollButton")
+window.onscroll = () => {
+    if (document.body.scrollTop > SCROLL_AMOUNT || document.documentElement.scrollTop > SCROLL_AMOUNT) {
+        scrollTopButton.style.display = "block"
+    } else {
+        scrollTopButton.style.display = "none"
+    }
+}
+
 function arrayEquals(a, b) {
     return (Array.isArray(a) && Array.isArray(b)) && (a.length === b.length) && a.every((val, index) => val === b[index]);
 }
@@ -12,31 +26,50 @@ Array.prototype.intersectTracks = function(arr2) { return this.filter(x => arr2.
 Array.prototype.diff = function(arr2) { return this.filter(x => !arr2.includes(x)); }
 Array.prototype.diffTracks = function(arr2) { return this.filter(x => !arr2.some(y => {return y.name == x.name && arrayEquals(y.artists, x.artists)})); }
 
-const multiselectData = {
-    buttonClass: 'form-select form-select-lg text-start',
-    buttonContainer: '<div class="btn-group d-grid"></div>',
-    templates: {
-        button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
-    },
-    nonSelectedText: 'Select Playlists',
-    includeSelectAllOption: true,
-    selectAllText: 'Select All',
-    selectAllNumber: true,
-    enableFiltering: true,
-    buttonTextAlignment: 'left',
-    maxHeight: 600,
-    numberDisplayed: 0,
-};
 
-function getMultiselectData(eventCallbackFn, nonSelectedText = ""){
-    let data = multiselectData;
-    data.onChange = eventCallbackFn
-    data.onSelectAll = eventCallbackFn
-    data.onDeselectAll = eventCallbackFn
-    if (nonSelectedText){
-        data.nonSelectedText = nonSelectedText
+function multiselectChange(options, property){
+    if (Array.isArray(options)){
+        for (const option of options){
+            let index = property.indexOf(option.val());
+            if (index !== -1){
+                property.splice(index, 1);
+            }
+            else{
+                property.push(option.val());
+            }
+        }
     }
-    return data
+    else{
+        let index = property.indexOf(options.val());
+        if (index !== -1){
+            property.splice(index, 1);
+        }
+        else{
+            property.push(options.val());
+        }
+    }
+}
+
+
+function getMultiselectData(property, nonSelectedText = "Select Playlists"){
+    return {
+        buttonClass: 'form-select form-select-lg text-start',
+        buttonContainer: '<div class="btn-group d-grid"></div>',
+        templates: {
+            button: '<button type="button" class="multiselect dropdown-toggle" data-bs-toggle="dropdown"><span class="multiselect-selected-text"></span></button>',
+        },
+        nonSelectedText: nonSelectedText,
+        includeSelectAllOption: true,
+        selectAllText: 'Select All',
+        selectAllNumber: true,
+        enableFiltering: true,
+        buttonTextAlignment: 'left',
+        maxHeight: 600,
+        numberDisplayed: 0,
+        onChange: (options) => multiselectChange(options, property),
+        onSelectAll: (options) => multiselectChange(options, property),
+        onDeselectAll: (options) => multiselectChange(options, property),
+    };
 }
 
 function getAccessToken(authCode, onSuccess, codeVerifier = null){
@@ -117,7 +150,7 @@ function getAccessTokenRefreshed(refreshToken, onSuccess){
 function getTracksTableHTML(tracks){
     return `
     <div class="table-responsive" style="max-height: 500px">
-    <table class="table table-dark">
+    <table class="table table-dark table-bordered table-striped">
         <thead>
             <tr>
                 <th scope="col">Title</th>
@@ -157,8 +190,9 @@ Vue.createApp({
         const diffSelected1 = Vue.ref("");
         const diffSelected2 = Vue.ref([]);
         const backupSelected = Vue.ref([]);
+        const artistsSelected = Vue.ref([]);
 
-        return {ACCESS_TOKEN, playlists, playlistTracks, duplicatesSelected, commonSelected1, commonSelected2, diffSelected1, diffSelected2, backupSelected};
+        return {ACCESS_TOKEN, playlists, playlistTracks, duplicatesSelected, commonSelected1, commonSelected2, diffSelected1, diffSelected2, backupSelected, artistsSelected};
     },
     computed: {
         console: () => console,
@@ -166,9 +200,8 @@ Vue.createApp({
     },
     beforeMount(){
         let accessTokenData = JSON.parse(localStorage.getItem("accessTokenData"));
-
         if (accessTokenData){
-            if (accessTokenData["expires_in"] >  (Date.now() / 1000)){
+            if (accessTokenData["expires_in"] > (Date.now() / 1000)){
                 this.setAccessToken(accessTokenData["access_token"]);
             }
             else if ("refresh_token" in accessTokenData){
@@ -185,7 +218,6 @@ Vue.createApp({
         window.onbeforeunload = () => {
             sessionStorage.playlistTracks = JSON.stringify(this.playlistTracks);
         }
-
         if (sessionStorage.playlistTracks){
             this.playlistTracks = JSON.parse(sessionStorage.playlistTracks);
         }
@@ -193,8 +225,9 @@ Vue.createApp({
     mounted(){
         this.$nextTick(() => {
             if (this.playlists){
-                $("#diffMultiselect").multiselect(getMultiselectData(this.diffSelected2Change));
-                $("#backupMultiselect").multiselect(getMultiselectData(this.backupChange, "Select Playlists to Backup"));
+                $("#diffMultiselect").multiselect(getMultiselectData(this.diffSelected2));
+                $("#backupMultiselect").multiselect(getMultiselectData(this.backupSelected, "Select Playlists to Backup"));
+                $("#artistsMultiselect").multiselect(getMultiselectData(this.artistsSelected));
             }
         });
     },
@@ -224,10 +257,12 @@ Vue.createApp({
                     this.playlists = res.items.map((i) => {return {id: i.id, name: i.name, total: i.tracks.total}});
                     sessionStorage.playlists = JSON.stringify(this.playlists);
                     this.$nextTick(() => {
-                        $("#diffMultiselect").multiselect(getMultiselectData(this.diffSelected2Change));
+                        $("#diffMultiselect").multiselect(getMultiselectData(this.diffSelected2));
                         $("#diffMultiselect").multiselect('rebuild');
-                        $("#backupMultiselect").multiselect(getMultiselectData(this.backupChange, "Select Playlists to Backup"));
+                        $("#backupMultiselect").multiselect(getMultiselectData(this.backupSelected, "Select Playlists to Backup"));
                         $("#backupMultiselect").multiselect('rebuild');
+                        $("#artistsMultiselect").multiselect(getMultiselectData(this.artistsSelected));
+                        $("#artistsMultiselect").multiselect('rebuild');
                     })
                 });
             }
@@ -311,28 +346,6 @@ Vue.createApp({
             }
             $("#commonResult").html(resultHTML);
         },
-        diffSelected2Change(options){
-            if (Array.isArray(options)){
-                for (const option of options){
-                    let index = this.diffSelected2.indexOf(option.val());
-                    if (index !== -1){
-                        this.diffSelected2.splice(index, 1);
-                    }
-                    else{
-                        this.diffSelected2.push(option.val());
-                    }
-                }
-            }
-            else{
-                let index = this.diffSelected2.indexOf(options.val());
-                if (index !== -1){
-                    this.diffSelected2.splice(index, 1);
-                }
-                else{
-                    this.diffSelected2.push(options.val());
-                }
-            }
-        },
         async findDiff(){
             let tracks1 = await this.getTracks(this.diffSelected1);
             let tracks2 = [];
@@ -357,28 +370,6 @@ Vue.createApp({
                 resultHTML = `<h5 class="mt-2 text-center">All Songs in <span class="fw-lighter">"${playlist1Name}"</span> are also in <span class="fw-lighter">"${playlist2Names.join(", ")}"</span></h5>`;
             }
             $("#diffResult").html(resultHTML);
-        },
-        backupChange(options){
-            if (Array.isArray(options)){
-                for (const option of options){
-                    let index = this.backupSelected.indexOf(option.val());
-                    if (index !== -1){
-                        this.backupSelected.splice(index, 1);
-                    }
-                    else{
-                        this.backupSelected.push(option.val());
-                    }
-                }
-            }
-            else{
-                let index = this.backupSelected.indexOf(options.val());
-                if (index !== -1){
-                    this.backupSelected.splice(index, 1);
-                }
-                else{
-                    this.backupSelected.push(options.val());
-                }
-            }
         },
         async getBackup(){
             backup = []
@@ -405,6 +396,113 @@ Vue.createApp({
             linkElement.setAttribute('href', dataUri);
             linkElement.setAttribute('download', "SpotifyBackup.json");
             linkElement.click();
+        },
+        async getArtists(){
+            let mainData = []
+            let artistsDetails = {}
+
+            for (let playlistID of this.artistsSelected){
+                let playlistName = this.playlists.find(p => p.id === playlistID).name
+                let tracks = await this.getTracks(playlistID)
+
+                for (let track of tracks){
+                    let details = {
+                        name: track.name || "Various Artists (Missing title - deleted song?)",
+                        artists: track.artists.join(", ") || "Various Artists (Missing artists - deleted song?)",
+                        playlist: playlistName
+                    }
+                    for (let artist of track.artists){
+                        if (!artist){
+                            artist = "Various Artists"
+                        }
+
+                        if (artist in artistsDetails){
+                            artistsDetails[artist].push(details)
+                        }
+                        else{
+                            artistsDetails[artist] = [details]
+                        }
+                    }
+                }
+            }
+
+            if (artistsDetails.length == 0) return
+
+            for (var [artist, details] of Object.entries(artistsDetails)){
+                mainData.push({
+                    artist: artist,
+                    track_count: details.length,
+                })
+            }
+            mainData.sort((a, b) => b.track_count - a.track_count)
+
+            $("#artistsResult").html("<table></table>").find("table").bootstrapTable({
+                columns: [
+                    {
+                        field: "track_count",
+                        title: "Track Sum",
+                        sortable: true,
+                        align: "right",
+                        halign: "left",
+                        width: 10,
+                        widthUnit: "%"
+                    },
+                    {
+                        field: "artist",
+                        title: "Artist",
+                        sortable: true,
+                        width: 90,
+                        widthUnit: "%"
+                    }
+                ],
+                data: mainData,
+                detailView: true,
+                detailViewByClick: true,
+                detailViewAlign: "right",
+                search: true,
+                pagination: true,
+                pageList: [10, 25, 50, 100, "all"],
+                classes: 'table table-bordered table-hover table-striped table-dark',
+                onExpandRow: (index, row, $detail) => {
+                    this.expandArtist($detail, artistsDetails[row.artist])
+                }
+            })
+        },
+        expandArtist($el, artistDetails){
+            $el.html(`
+            <div class="d-flex">
+                <i class="bi bi-arrow-return-right p-2"></i>
+                <div class="flex-grow-1">
+                    <table></table>
+                </div>
+            </div>
+            `).find('table').bootstrapTable({
+                columns: [
+                    {
+                        field: "artists",
+                        title: "Artists",
+                        sortable: true,
+                        width: 40,
+                        widthUnit: "%"
+                    },
+                    {
+                        field: "name",
+                        title: "Title",
+                        sortable: true,
+                        width: 40,
+                        widthUnit: "%"
+                    },
+                    {
+                        field: "playlist",
+                        title: "Playlist",
+                        sortable: true,
+                        width: 20,
+                        widthUnit: "%"
+                    }
+                ],
+                data: artistDetails,
+                classes: 'table table-bordered table-striped table-dark table-sm',
+            })
         },
     }
 }).mount("#app")
