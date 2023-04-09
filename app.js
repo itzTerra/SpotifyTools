@@ -436,8 +436,41 @@ Vue.createApp({
             }
             mainData.sort((a, b) => b.track_count - a.track_count)
 
+            const setRank = (curRank, toRank) => {
+                let toRankLen = toRank.length
+                let rank = curRank
+                if (toRankLen > 1){
+                    rank = `${curRank} - ${curRank+toRankLen-1}`
+                }
+                for (a of toRank){
+                    a.rank = rank
+                }
+                toRank.length = 0
+                return curRank + toRankLen
+            }
+            let toRank = []
+            let curRank = 1
+            let curTrackCount = mainData[0].track_count
+            for (artist of mainData){
+                if (artist.track_count !== curTrackCount){
+                    curRank = setRank(curRank, toRank)
+                    curTrackCount = artist.track_count
+                }
+                toRank.push(artist)
+            }
+            setRank(curRank, toRank)
+
             $("#artistsResult").html("<table></table>").find("table").bootstrapTable({
                 columns: [
+                    {
+                        field: "rank",
+                        title: "Rank",
+                        sortable: false,
+                        align: "right",
+                        halign: "right",
+                        width: 10,
+                        widthUnit: "%"
+                    },
                     {
                         field: "track_count",
                         title: "Track Sum",
@@ -451,7 +484,7 @@ Vue.createApp({
                         field: "artist",
                         title: "Artist",
                         sortable: true,
-                        width: 90,
+                        width: 80,
                         widthUnit: "%"
                     }
                 ],
