@@ -1,24 +1,20 @@
-.github-link{
-    position: fixed;
-    top: 0;
-    left: 0;
-    text-decoration: none;
-    padding: 0.35rem;
-    color: lightgray;
-    font-weight: 300;
-    background-color: rgba(0, 0, 0, 0.4);
-    border-radius: 0.25rem;
-    z-index: 1;
+[data-bs-theme=dark] {
+    --bs-body-color: #c7cdd3;
+    --bs-secondary-color: rgba(173, 181, 189, 0.8);
+    --bs-border-color: var(--bs-dark-border-subtle);
 }
 
-.github-link:hover{
-    color: gray;
-    text-decoration: underline;
-}
-
-body{
+[data-bs-theme=dark] body{
     background-color: #121212;
-    color: var(--bs-light);
+}
+
+html { 
+    height:100%;
+}
+body { 
+    min-height:100%;
+    display: flex;
+    flex-direction: column;
 }
 
 p{
@@ -28,6 +24,10 @@ p{
 .bg-surface1{
     background-color: var(--bs-gray-800);
     border-radius: 0.25rem;
+}
+
+.table-responsive{
+    max-height: 430px;
 }
 
 .disconnect-btn{
@@ -77,12 +77,16 @@ p{
     font-weight: bold;
 }
 
-.btn-scroll-top{
+tr.detail-view > td{
+    padding: 0;
+}
+
+#back-to-top-btn{
     display: none;
     position: fixed;
-    bottom: 10px;
-    left: 50%;
-    z-index: 99;
+    right: 20px;
+    bottom: 20px;
+    z-index: 200;
 
     --bs-btn-color: black;
     --bs-btn-font-weight: 500;
@@ -97,10 +101,22 @@ p{
     --bs-btn-disabled-color: black;
     --bs-btn-disabled-bg: #1db954;
     --bs-btn-disabled-border-color: transparent;
-
-    opacity: 75%;
 }
 
-tr.detail-view > td{
-    padding: 0;
+/* .github-link{
+    position: fixed;
+    top: 0;
+    left: 0;
+    text-decoration: none;
+    padding: 0.35rem;
+    color: lightgray;
+    font-weight: 300;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 0.25rem;
+    z-index: 1;
 }
+
+.github-link:hover{
+    color: gray;
+    text-decoration: underline;
+} */

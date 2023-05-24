@@ -1,21 +1,7 @@
 const CLIENT_ID = "d347cce711f34e3bbfe5f52689e46c09";
 const CLIENT_SECRET = "5a459975172742f992d247bd1050e84e";
-// const HOME_URL = "http://127.0.0.1:5500/index.html";
-const HOME_URL = "https://itzterra.github.io/SpotifyTools/";
-
-function goTop(){
-    document.body.scrollIntoView()
-}
-
-const SCROLL_AMOUNT = 500
-const scrollTopButton = document.getElementById("scrollButton")
-window.onscroll = () => {
-    if (document.body.scrollTop > SCROLL_AMOUNT || document.documentElement.scrollTop > SCROLL_AMOUNT) {
-        scrollTopButton.style.display = "block"
-    } else {
-        scrollTopButton.style.display = "none"
-    }
-}
+const HOME_URL = "http://127.0.0.1:5500/index.html";
+// const HOME_URL = "https://itzterra.github.io/SpotifyTools/";
 
 function arrayEquals(a, b) {
     return (Array.isArray(a) && Array.isArray(b)) && (a.length === b.length) && a.every((val, index) => val === b[index]);
@@ -98,7 +84,7 @@ function getAccessToken(authCode, onSuccess, codeVerifier = null){
     })
 }
 
-// Something doesn't work when 
+// NOT WORKING
 // function generateId(len = 50) {
 //     var arr = new Uint8Array(len / 2);
 //     crypto.getRandomValues(arr);
@@ -149,7 +135,7 @@ function getAccessTokenRefreshed(refreshToken, onSuccess){
 
 function getTracksTableHTML(tracks){
     return `
-    <div class="table-responsive" style="max-height: 500px">
+    <div class="table-responsive">
     <table class="table table-dark table-bordered table-striped">
         <thead>
             <tr>
@@ -316,7 +302,7 @@ Vue.createApp({
             let resultHTML;
             if (dupes.length){
                 resultHTML = `
-                <h5 class="my-3">${dupes.length} Duplicate${dupes.length > 1 ? "s" : ""} found in <span class="fw-lighter">"${playlistName}"</span>:</h5>
+                <h5 class="mt-4 mb-3">${dupes.length} Duplicate${dupes.length > 1 ? "s" : ""} found in <span class="fw-lighter">"${playlistName}"</span>:</h5>
                 ${getTracksTableHTML(dupes)}
                 `;
             }
@@ -337,7 +323,7 @@ Vue.createApp({
             let resultHTML;
             if (commonTracks.length){
                 resultHTML = `
-                <h5 class="my-3">${commonTracks.length} Common Song${commonTracks.length > 1 ? "s" : ""} found for <span class="fw-lighter">"${playlist1Name}"</span> and <span class="fw-lighter">"${playlist2Name}"</span>:</h5>
+                <h5>${commonTracks.length} Common Song${commonTracks.length > 1 ? "s" : ""} found for <span class="fw-lighter">"${playlist1Name}"</span> and <span class="fw-lighter">"${playlist2Name}"</span>:</h5>
                 ${getTracksTableHTML(commonTracks)}
                 `;
             }
@@ -362,7 +348,7 @@ Vue.createApp({
             let resultHTML;
             if (diffTracks.length){
                 resultHTML = `
-                <h5 class="my-3">${diffTracks.length} Unique Song${diffTracks.length > 1 ? "s" : ""} found in <span class="fw-lighter">"${playlist1Name}"</span>, which are not in <span class="fw-lighter">"${playlist2Names.join(", ")}"</span>:</h5>
+                <h5>${diffTracks.length} Unique Song${diffTracks.length > 1 ? "s" : ""} found in <span class="fw-lighter">"${playlist1Name}"</span>, which are not in <span class="fw-lighter">"${playlist2Names.join(", ")}"</span>:</h5>
                 ${getTracksTableHTML(diffTracks)}
                 `;
             }
