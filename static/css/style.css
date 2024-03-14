@@ -8,10 +8,10 @@
     background-color: #121212;
 }
 
-html { 
+html {
     height:100%;
 }
-body { 
+body {
     min-height:100%;
     display: flex;
     flex-direction: column;
@@ -63,6 +63,18 @@ p{
 
 .nav-pills{
     --bs-nav-pills-link-active-bg: #1db954;
+}
+
+@media screen and (max-width: 1400px) {
+    .nav-pills .nav-link {
+        font-size: smaller;
+    }
+}
+
+@media screen and (max-width: 992px) {
+    .nav-pills .nav-link {
+        --bs-nav-link-padding-y: 0.4rem;
+    }
 }
 
 .tab-content>.active.ad-flex{
